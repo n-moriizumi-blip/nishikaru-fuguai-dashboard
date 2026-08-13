@@ -12,13 +12,14 @@
   :root {
     color-scheme: light;
     --page-bg: #E9ECEF;
-    --card-bg: #fcfcfb;
-    --text-primary: #0b0b0b;
+    --card-bg: #ffffff;
+    --text-primary: #1D2226;
     --text-secondary: #52514e;
-    --text-muted: #898781;
-    --grid-line: #e1e0d9;
-    --baseline: #c3c2b7;
-    --border: rgba(11,11,11,0.10);
+    --text-muted: #8A93A0;
+    --grid-line: #E3E8EC;
+    --baseline: #C7CDD3;
+    --border: rgba(31,58,82,.12);
+    --card-shadow: 0 1px 2px rgba(20,30,40,.04), 0 6px 20px rgba(20,30,40,.05);
     --series-1: #2a78d6; /* 個数・KP・ランキング基調色(blue) */
     --series-2: #eb6834; /* 件数・差し戻し(orange) */
     --series-3: #1baf7a; /* 金額(aqua/green、個数・件数と混同しないよう独立色) */
@@ -30,7 +31,7 @@
     --brand-accent: #F2A900;
   }
   @media (prefers-color-scheme: dark) {
-    :root:where(:not([data-theme="light"])) {
+    :root {
       color-scheme: dark;
       --page-bg: #0d0d0d;
       --card-bg: #1a1a19;
@@ -40,6 +41,7 @@
       --grid-line: #2c2c2a;
       --baseline: #383835;
       --border: rgba(255,255,255,0.10);
+      --card-shadow: none;
       --series-1: #3987e5;
       --series-2: #d95926;
       --series-3: #199e70;
@@ -48,24 +50,6 @@
       --tooltip-bg: #ffffff;
       --tooltip-fg: #1a1a19;
     }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --page-bg: #0d0d0d;
-    --card-bg: #1a1a19;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --grid-line: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --tooltip-bg: #ffffff;
-    --tooltip-fg: #1a1a19;
   }
 
   * { box-sizing: border-box; }
@@ -117,7 +101,14 @@
   .refresh-btn:hover { background: rgba(255,255,255,.16); }
   .refresh-btn:disabled { opacity: .5; cursor: default; }
 
-  .wrap { max-width: 1400px; margin: 0 auto; padding: 20px 20px 64px; }
+  /* 画面幅に応じて表示幅・グラフサイズを調整する(PC:広く大きく／タブレット:中間／スマホ:全幅) */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 72px; }
+  @media (max-width: 980px) {
+    .wrap { max-width: 780px; padding: 22px 18px 60px; }
+  }
+  @media (max-width: 600px) {
+    .wrap { max-width: 100%; padding: 16px 12px 48px; }
+  }
 
   .status-banner {
     background: var(--card-bg);
@@ -145,36 +136,36 @@
     cursor: pointer;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(560px, 1fr));
-    gap: 18px;
-  }
+  /* グラフは1つ1列(縦積み)、1枚1枚を大きく表示する */
+  .stack { display: flex; flex-direction: column; gap: 22px; }
 
   .kpi-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
+  @media (max-width: 620px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
   .kpi {
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
     padding: 14px 16px;
   }
-  .kpi .kpi-label { font-size: 12px; color: var(--text-muted); margin: 0 0 6px; }
-  .kpi .kpi-value { font-size: 26px; font-weight: 700; margin: 0; }
-  .kpi .kpi-delta { font-size: 12px; margin-top: 4px; font-weight: 600; }
+  .kpi .kpi-label { font-size: 11.5px; color: var(--text-muted); margin: 0 0 6px; }
+  .kpi .kpi-value { font-size: 25px; font-weight: 800; margin: 0; font-variant-numeric: proportional-nums; }
+  .kpi .kpi-delta { font-size: 11.5px; margin-top: 4px; font-weight: 700; }
   .kpi .kpi-delta.up { color: #d03b3b; }
   .kpi .kpi-delta.down { color: #006300; }
-  .kpi svg.spark { display: block; margin-top: 8px; width: 100%; height: 28px; }
+  .kpi svg.spark { display: block; margin-top: 8px; width: 100%; height: 26px; }
 
   .card {
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px 16px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    padding: 18px 20px 20px;
     position: relative;
   }
   .card-head {
@@ -184,8 +175,8 @@
     gap: 10px;
     margin-bottom: 4px;
   }
-  .card-head h3 { font-size: 14px; margin: 0; font-weight: 700; }
-  .card .subtitle { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; }
+  .card-head h3 { font-size: 15px; margin: 0; font-weight: 700; }
+  .card .subtitle { font-size: 12px; color: var(--text-muted); margin: 4px 0 12px; }
   .table-toggle {
     appearance: none;
     border: 1px solid var(--border);
@@ -231,8 +222,8 @@
 
   .gridline { stroke: var(--grid-line); stroke-width: 1; }
   .baseline-axis { stroke: var(--baseline); stroke-width: 1; }
-  .axis-label { fill: var(--text-muted); font-size: 10.5px; }
-  .value-label { fill: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .value-label { fill: var(--text-secondary); font-size: 11px; font-weight: 600; }
 
   .mark { cursor: pointer; }
   .mark:hover, .mark:focus { filter: brightness(1.08); }
@@ -282,7 +273,7 @@
 <div class="wrap">
   <div id="status-banner" class="status-banner">データを読み込んでいます…</div>
   <div id="kpi-row"></div>
-  <div class="grid" id="grid-main"></div>
+  <div class="stack" id="stack-main"></div>
 </div>
 
 <div id="viz-tooltip" role="tooltip"></div>
@@ -330,7 +321,7 @@
     banner.textContent = 'データを読み込んでいます…';
     banner.style.display = 'block';
     document.getElementById('kpi-row').innerHTML = '';
-    document.getElementById('grid-main').innerHTML = '';
+    document.getElementById('stack-main').innerHTML = '';
     refreshBtn.disabled = true;
 
     fetch(GAS_URL + '?mode=dashboard')
@@ -468,8 +459,20 @@
   /* ---------------------------------------------------------------- */
   /* 2. チャート描画関数                                                */
   /* ---------------------------------------------------------------- */
-  var W = 760, H = 400;
-  var M = { top: 28, right: 16, bottom: 30, left: 46 };
+  /* 画面幅に応じたグラフのジオメトリ(.wrapのCSS側ブレークポイントと対応させ、viewBoxの単位を
+     実際のpx幅にほぼ揃える。これによりフォントサイズが画面サイズによって縮小・拡大しすぎない) */
+  var GEOMETRY = {
+    desktop: { W: 1100, H: 460, M: { top: 34, right: 20, bottom: 36, left: 58 }, barMax: 26, labelEvery: 1 },
+    tablet: { W: 740, H: 340, M: { top: 26, right: 14, bottom: 30, left: 46 }, barMax: 22, labelEvery: 1 },
+    mobile: { W: 340, H: 300, M: { top: 20, right: 8, bottom: 30, left: 34 }, barMax: 13, labelEvery: 2 }
+  };
+  function breakpointName() {
+    var w = window.innerWidth;
+    if (w >= 981) return 'desktop';
+    if (w >= 601) return 'tablet';
+    return 'mobile';
+  }
+  var G = GEOMETRY[breakpointName()]; // 現在の描画ジオメトリ(renderAllの直前に画面幅から選び直す)
 
   /* 系列色ごとに、常時表示ラベルを塗り内に置くときの文字色(コントラスト確保用) */
   var LABEL_INK_ON = {
@@ -483,10 +486,10 @@
   function axisAndGrid(svg, maxVal, plotW, plotH) {
     var steps = 4;
     for (var i = 0; i <= steps; i++) {
-      var y = M.top + plotH - (plotH * i / steps);
-      svg.appendChild(el('line', { class: i === 0 ? 'baseline-axis' : 'gridline', x1: M.left, x2: M.left + plotW, y1: y, y2: y }));
+      var y = G.M.top + plotH - (plotH * i / steps);
+      svg.appendChild(el('line', { class: i === 0 ? 'baseline-axis' : 'gridline', x1: G.M.left, x2: G.M.left + plotW, y1: y, y2: y }));
       var val = Math.round(maxVal * i / steps);
-      var t = el('text', { class: 'axis-label', x: M.left - 6, y: y + 3, 'text-anchor': 'end' });
+      var t = el('text', { class: 'axis-label', x: G.M.left - 6, y: y + 3, 'text-anchor': 'end' });
       t.textContent = fmtInt(val);
       svg.appendChild(t);
     }
@@ -494,23 +497,23 @@
 
   function buildGroupedBar(container, categories, series, opts) {
     opts = opts || {};
-    var plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var maxVal = niceMax(Math.max.apply(null, series.flatMap(function (s) { return s.values; })) * 1.15);
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length, sN = series.length;
     var groupW = plotW / n;
-    var barW = Math.min(24, (groupW - 8) / sN);
+    var barW = Math.min(G.barMax, (groupW - 8) / sN);
     var gap = 2;
 
     categories.forEach(function (cat, ci) {
-      var gx = M.left + ci * groupW;
+      var gx = G.M.left + ci * groupW;
       series.forEach(function (s, si) {
         var v = s.values[ci];
         var bh = plotH * (v / maxVal);
         var bx = gx + (groupW - sN * barW - (sN - 1) * gap) / 2 + si * (barW + gap);
-        var by = M.top + plotH - bh;
+        var by = G.M.top + plotH - bh;
         var rect = el('rect', {
           x: bx, y: by, width: barW, height: Math.max(bh, 1),
           rx: 4, ry: 4, fill: s.color
@@ -521,9 +524,11 @@
         vLab.textContent = opts.fmt ? opts.fmt(v) : fmtInt(v);
         svg.appendChild(vLab);
       });
-      var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: H - 8, 'text-anchor': 'middle' });
-      lab.textContent = cat;
-      svg.appendChild(lab);
+      if (ci % G.labelEvery === 0) {
+        var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: G.H - 8, 'text-anchor': 'middle' });
+        lab.textContent = cat;
+        svg.appendChild(lab);
+      }
     });
     container.appendChild(svg);
     if (sN > 1) legendFor(container, series.map(function (s) { return { label: s.name, color: s.color }; }));
@@ -531,22 +536,22 @@
 
   /** 個数(棒)と件数(折れ線)を同じ軸上に重ねる複合グラフ(どちらも「件」単位のため軸を共有できる) */
   function buildBarLineCombo(container, categories, barSeries, lineSeries) {
-    var plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var maxVal = niceMax(Math.max(Math.max.apply(null, barSeries.values), Math.max.apply(null, lineSeries.values)) * 1.25);
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length;
     var groupW = plotW / n;
-    var barW = Math.min(24, groupW - 14);
+    var barW = Math.min(G.barMax, groupW - 14);
 
     var linePts = [];
     categories.forEach(function (cat, ci) {
-      var gx = M.left + ci * groupW;
+      var gx = G.M.left + ci * groupW;
       var v = barSeries.values[ci];
       var bh = plotH * (v / maxVal);
       var bx = gx + (groupW - barW) / 2;
-      var by = M.top + plotH - bh;
+      var by = G.M.top + plotH - bh;
       var rect = el('rect', { x: bx, y: by, width: barW, height: Math.max(bh, 1), rx: 4, ry: 4, fill: barSeries.color });
       attachMarkTooltip(rect, cat, [
         { label: barSeries.name, value: fmtInt(v), color: barSeries.color },
@@ -557,12 +562,14 @@
       vLab.textContent = fmtInt(v);
       svg.appendChild(vLab);
 
-      var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: H - 8, 'text-anchor': 'middle' });
-      lab.textContent = cat;
-      svg.appendChild(lab);
+      if (ci % G.labelEvery === 0) {
+        var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: G.H - 8, 'text-anchor': 'middle' });
+        lab.textContent = cat;
+        svg.appendChild(lab);
+      }
 
       var lv = lineSeries.values[ci];
-      linePts.push([gx + groupW / 2, M.top + plotH - plotH * (lv / maxVal)]);
+      linePts.push([gx + groupW / 2, G.M.top + plotH - plotH * (lv / maxVal)]);
     });
 
     var linePath = 'M' + linePts.map(function (p) { return p[0] + ',' + p[1]; }).join(' L');
@@ -583,19 +590,19 @@
   }
 
   function buildStackedBar(container, categories, series) {
-    var plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var totals = categories.map(function (_, ci) { return series.reduce(function (a, s) { return a + s.values[ci]; }, 0); });
     var maxVal = niceMax(Math.max.apply(null, totals) * 1.1);
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length;
     var groupW = plotW / n;
-    var barW = Math.min(24, groupW - 10);
+    var barW = Math.min(G.barMax, groupW - 10);
 
     categories.forEach(function (cat, ci) {
-      var gx = M.left + ci * groupW + (groupW - barW) / 2;
-      var yCursor = M.top + plotH;
+      var gx = G.M.left + ci * groupW + (groupW - barW) / 2;
+      var yCursor = G.M.top + plotH;
       series.forEach(function (s) {
         var v = s.values[ci];
         var bh = plotH * (v / maxVal);
@@ -617,9 +624,11 @@
         }
         yCursor -= bh;
       });
-      var lab = el('text', { class: 'axis-label', x: gx + barW / 2, y: H - 8, 'text-anchor': 'middle' });
-      lab.textContent = cat;
-      svg.appendChild(lab);
+      if (ci % G.labelEvery === 0) {
+        var lab = el('text', { class: 'axis-label', x: gx + barW / 2, y: G.H - 8, 'text-anchor': 'middle' });
+        lab.textContent = cat;
+        svg.appendChild(lab);
+      }
     });
     container.appendChild(svg);
     legendFor(container, series.map(function (s) { return { label: s.name, color: s.color }; }));
@@ -627,20 +636,20 @@
 
   function buildLine(container, categories, values, color, opts) {
     opts = opts || {};
-    var plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var maxVal = niceMax(Math.max.apply(null, values) * 1.2);
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length;
     var stepX = plotW / (n - 1);
     var pts = values.map(function (v, i) {
-      return [M.left + i * stepX, M.top + plotH - plotH * (v / maxVal)];
+      return [G.M.left + i * stepX, G.M.top + plotH - plotH * (v / maxVal)];
     });
 
-    var areaPath = 'M' + pts[0][0] + ',' + (M.top + plotH) + ' ' +
+    var areaPath = 'M' + pts[0][0] + ',' + (G.M.top + plotH) + ' ' +
       pts.map(function (p) { return 'L' + p[0] + ',' + p[1]; }).join(' ') +
-      ' L' + pts[pts.length - 1][0] + ',' + (M.top + plotH) + ' Z';
+      ' L' + pts[pts.length - 1][0] + ',' + (G.M.top + plotH) + ' Z';
     svg.appendChild(el('path', { d: areaPath, fill: color, opacity: '0.1' }));
 
     var linePath = 'M' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' L');
@@ -653,9 +662,11 @@
       attachMarkTooltip(hit, categories[i], [{ label: opts.seriesName || '値', value: (opts.fmt ? opts.fmt(values[i]) : fmtInt(values[i])), color: color }]);
       g.appendChild(hit);
       svg.appendChild(g);
-      var lab = el('text', { class: 'axis-label', x: p[0], y: H - 8, 'text-anchor': 'middle' });
-      lab.textContent = categories[i];
-      svg.appendChild(lab);
+      if (i % G.labelEvery === 0) {
+        var lab = el('text', { class: 'axis-label', x: p[0], y: G.H - 8, 'text-anchor': 'middle' });
+        lab.textContent = categories[i];
+        svg.appendChild(lab);
+      }
       var vLab = el('text', { class: 'value-label', x: p[0], y: p[1] - 12, 'text-anchor': 'middle' });
       vLab.textContent = opts.fmt ? opts.fmt(values[i]) : fmtInt(values[i]);
       svg.appendChild(vLab);
@@ -668,11 +679,11 @@
     opts = opts || {};
     var sorted = items.slice().sort(function (a, b) { return b.value - a.value; });
     var topPad = 10, gap = 8;
-    var rowSlot = (H - topPad * 2) / Math.max(sorted.length, 1);
-    var rowH = Math.min(24, rowSlot - gap);
+    var rowSlot = (G.H - topPad * 2) / Math.max(sorted.length, 1);
+    var rowH = Math.min(G.barMax, rowSlot - gap);
     var plotLeft = 84, plotRight = 74;
-    var rh = W - plotLeft - plotRight;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+    var rh = G.W - plotLeft - plotRight;
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var maxVal = niceMax(Math.max.apply(null, sorted.map(function (d) { return d.value; })) * 1.15);
 
     sorted.forEach(function (d, i) {
@@ -694,10 +705,10 @@
   function build100StackedBar(container, segments) {
     var total = segments.reduce(function (a, s) { return a + s.value; }, 0) || 1;
     var barH = 34;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + (barH + 30) });
+    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + (barH + 30) });
     var x = 0;
     segments.forEach(function (s) {
-      var w = (W - (segments.length - 1) * 2) * (s.value / total);
+      var w = (G.W - (segments.length - 1) * 2) * (s.value / total);
       var rect = el('rect', { x: x, y: 0, width: Math.max(w, 1), height: barH, fill: s.color });
       attachMarkTooltip(rect, s.label, [{ label: '比率', value: s.value + '%', color: s.color }]);
       svg.appendChild(rect);
@@ -900,17 +911,33 @@
   }
 
   function renderAll() {
+    G = GEOMETRY[breakpointName()]; // 現在の画面幅に合わせてグラフのジオメトリを選び直す
     buildKpiRow(document.getElementById('kpi-row'));
-    var grid = document.getElementById('grid-main');
-    cardMonthlyQtyCount(grid);
-    cardMonthlyAmount(grid);
-    cardStackedGroup(grid);
-    cardCauseRanking(grid);
-    cardDefectRate(grid);
-    cardKpRework(grid);
-    cardCustomerRanking(grid);
-    cardMachineRanking(grid);
+    var stack = document.getElementById('stack-main');
+    stack.innerHTML = '';
+    cardMonthlyQtyCount(stack);
+    cardMonthlyAmount(stack);
+    cardStackedGroup(stack);
+    cardCauseRanking(stack);
+    cardDefectRate(stack);
+    cardKpRework(stack);
+    cardCustomerRanking(stack);
+    cardMachineRanking(stack);
   }
+
+  /* 画面幅が変わってブレークポイントをまたいだ時だけ再描画する(データは再取得せず、既に持っている値で再描画) */
+  var currentBreakpoint = breakpointName();
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      var bp = breakpointName();
+      if (bp !== currentBreakpoint && MONTHS) {
+        currentBreakpoint = bp;
+        renderAll();
+      }
+    }, 150);
+  });
 
   fetchAndRender();
 })();
