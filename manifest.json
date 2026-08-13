@@ -1,0 +1,14 @@
+{
+  "name": "品質不良ダッシュボード",
+  "short_name": "不良ダッシュボード",
+  "description": "西軽精機 品質不良ダッシュボード(月別個数・金額、分類別内訳、得意先別・設備別ランキング等)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E9ECEF",
+  "theme_color": "#1F3A52",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
