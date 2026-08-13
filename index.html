@@ -759,25 +759,44 @@
     container.appendChild(svg);
   }
 
+  /**
+   * KPIタイルに表示する「対象月」のインデックスを返す(2026-08-13修正)。
+   * 以前は配列の末尾(monthlyQty.length-1、常に年度最後の5月)を「今月」として表示しており、
+   * 実際の日付と無関係に固定表示になっていた。当月はまだ集計途中で数字が小さく見えるため、
+   * 「直近の完了月(前月)」を表示する仕様に変更する(ユーザー指摘: 「今月」ではなく「前月分」を表示)。
+   */
+  function reportMonthIndex() {
+    var label = (new Date().getMonth() + 1) + '月';
+    var idx = MONTHS.indexOf(label);
+    if (idx < 0) idx = MONTHS.length - 1; // 想定外の場合のフォールバック
+    var prevIdx = idx - 1;
+    // 年度最初の月(6月)は「前月」が前年度分(データ無し)になるため、その月自体を表示する
+    return prevIdx < 0 ? idx : prevIdx;
+  }
+
   function buildKpiRow(container) {
-    var thisMonthQty = monthlyQty[monthlyQty.length - 1];
-    var prevQty = monthlyQty[monthlyQty.length - 2];
+    var repIdx = reportMonthIndex();
+    var compIdx = repIdx - 1 < 0 ? repIdx : repIdx - 1;
+    var repLabel = MONTHS[repIdx];
+
+    var thisMonthQty = monthlyQty[repIdx];
+    var prevQty = monthlyQty[compIdx];
     var qtyDelta = prevQty ? Math.round(((thisMonthQty - prevQty) / prevQty) * 100) : 0;
-    var thisMonthAmount = monthlyAmountKP[monthlyAmountKP.length - 1];
-    var prevAmount = monthlyAmountKP[monthlyAmountKP.length - 2];
+    var thisMonthAmount = monthlyAmountKP[repIdx];
+    var prevAmount = monthlyAmountKP[compIdx];
     var amtDelta = prevAmount ? Math.round(((thisMonthAmount - prevAmount) / prevAmount) * 100) : 0;
-    var thisRate = defectRate[defectRate.length - 1];
-    var prevRate = defectRate[defectRate.length - 2];
+    var thisRate = defectRate[repIdx];
+    var prevRate = defectRate[compIdx];
     var rateDelta = Math.round((thisRate - prevRate) * 10) / 10;
 
     var kpTile = kpReworkRatio[0] || { value: 0 };
     var reworkTile = kpReworkRatio[1] || { value: 0 };
 
     var tiles = [
-      { label: '今月 不良個数', value: fmtInt(thisMonthQty) + ' 個', delta: qtyDelta, series: monthlyQty, color: 'var(--series-1)' },
-      { label: '今月 不良金額(KP)', value: fmtYen(thisMonthAmount), delta: amtDelta, series: monthlyAmountKP, color: 'var(--series-3)' },
-      { label: '今月 不良率', value: thisRate + '%', delta: rateDelta, deltaIsPoint: true, series: defectRate, color: 'var(--series-1)' },
-      { label: '社内不良(KP)比率', value: kpTile.value + '%', note: '差し戻し ' + reworkTile.value + '%', series: null, color: 'var(--series-1)' }
+      { label: repLabel + ' 不良個数', value: fmtInt(thisMonthQty) + ' 個', delta: qtyDelta, series: monthlyQty, color: 'var(--series-1)' },
+      { label: repLabel + ' 不良金額(KP)', value: fmtYen(thisMonthAmount), delta: amtDelta, series: monthlyAmountKP, color: 'var(--series-3)' },
+      { label: repLabel + ' 不良率', value: thisRate + '%', delta: rateDelta, deltaIsPoint: true, series: defectRate, color: 'var(--series-1)' },
+      { label: '社内不良(KP)比率(年計)', value: kpTile.value + '%', note: '差し戻し ' + reworkTile.value + '%', series: null, color: 'var(--series-1)' }
     ];
 
     var row = h('div', { class: 'kpi-row' });
