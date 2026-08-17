@@ -718,27 +718,6 @@
     container.appendChild(svg);
   }
 
-  function build100StackedBar(container, segments) {
-    var total = segments.reduce(function (a, s) { return a + s.value; }, 0) || 1;
-    var barH = 34;
-    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + (barH + 30) });
-    var x = 0;
-    segments.forEach(function (s) {
-      var w = (G.W - (segments.length - 1) * 2) * (s.value / total);
-      var rect = el('rect', { x: x, y: 0, width: Math.max(w, 1), height: barH, fill: s.color });
-      attachMarkTooltip(rect, s.label, [{ label: '比率', value: s.value + '%', color: s.color }]);
-      svg.appendChild(rect);
-      if (w > 46) {
-        var t = el('text', { x: x + w / 2, y: barH / 2 + 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': '12', 'font-weight': '700' });
-        t.textContent = s.value + '%';
-        svg.appendChild(t);
-      }
-      x += w + 2;
-    });
-    container.appendChild(svg);
-    legendFor(container, segments.map(function (s) { return { label: s.label + '(' + s.value + '%)', color: s.color }; }));
-  }
-
   /* ---------------------------------------------------------------- */
   /* 3. 表(アクセシビリティ用)描画関数                                    */
   /* ---------------------------------------------------------------- */
@@ -972,17 +951,6 @@
       }
     });
   }
-  function cardKpRework(parent) {
-    makeCard(parent, {
-      title: '社内不良(KP)と差し戻しの比率',
-      subtitle: '年計、個数ベースの構成比',
-      buildViz: function (v) { build100StackedBar(v, kpReworkRatio); },
-      buildTable: function (t) {
-        buildSimpleTable(t, ['区分', '比率'], kpReworkRatio.map(function (s) { return [s.label, s.value + '%']; }));
-      }
-    });
-  }
-
   function sectionHeader(text) {
     var div = h('div', { class: 'section-title' });
     div.appendChild(h('span', { class: 'bar' }));
@@ -1002,7 +970,6 @@
     cardStackedGroup(stack);
     cardCauseRanking(stack);
     cardDefectRate(stack);
-    cardKpRework(stack);
     cardCustomerRanking(stack);
     cardMachineRanking(stack);
 
