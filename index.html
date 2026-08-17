@@ -139,6 +139,18 @@
   /* グラフは1つ1列(縦積み)、1枚1枚を大きく表示する */
   .stack { display: flex; flex-direction: column; gap: 22px; }
 
+  /* 社内不良(KP)/客先クレーム(CC)のセクション見出し(2026-08-17追加) */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    color: var(--text-primary);
+  }
+  .section-title .bar { width: 4px; height: 15px; border-radius: 2px; background: var(--brand-accent); flex-shrink: 0; }
+
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -290,7 +302,8 @@
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP,
     DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
-    CUSTOMERS, MACHINES, defectRate, kpReworkRatio, claimMonthly;
+    CUSTOMERS, MACHINES, defectRate, kpReworkRatio, claimMonthly,
+    CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
 
   function applyData(data) {
     MONTHS = data.months;
@@ -305,6 +318,8 @@
     MACHINES = data.machines || [];
     defectRate = data.defectRate;
     claimMonthly = data.claimMonthly || MONTHS.map(function () { return 0; });
+    CLAIM_BY_WORKER = data.claimByWorker || [];
+    CLAIM_BY_INSPECTOR = data.claimByInspector || [];
     kpReworkRatio = (data.kpReworkRatio || []).map(function (s, i) {
       return { label: s.label, value: s.value, color: i === 0 ? 'var(--series-1)' : 'var(--series-2)' };
     });
@@ -931,6 +946,32 @@
       }
     });
   }
+  function cardClaimByWorker(parent) {
+    makeCard(parent, {
+      title: '客先クレーム 加工者別件数',
+      subtitle: '客先クレーム管理台帳(CC)の加工者列、上位' + CLAIM_BY_WORKER.length + '件',
+      buildViz: function (v) {
+        buildRanking(v, CLAIM_BY_WORKER, 'var(--series-2)', { metricName: '件数' });
+      },
+      buildTable: function (t) {
+        var rows = CLAIM_BY_WORKER.slice().sort(function (a, b) { return b.value - a.value; }).map(function (p) { return [p.label, p.value]; });
+        buildSimpleTable(t, ['加工者', '件数'], rows);
+      }
+    });
+  }
+  function cardClaimByInspector(parent) {
+    makeCard(parent, {
+      title: '客先クレーム 検査員別件数',
+      subtitle: '客先クレーム管理台帳(CC)の検査員列、上位' + CLAIM_BY_INSPECTOR.length + '件',
+      buildViz: function (v) {
+        buildRanking(v, CLAIM_BY_INSPECTOR, 'var(--series-2)', { metricName: '件数' });
+      },
+      buildTable: function (t) {
+        var rows = CLAIM_BY_INSPECTOR.slice().sort(function (a, b) { return b.value - a.value; }).map(function (p) { return [p.label, p.value]; });
+        buildSimpleTable(t, ['検査員', '件数'], rows);
+      }
+    });
+  }
   function cardKpRework(parent) {
     makeCard(parent, {
       title: '社内不良(KP)と差し戻しの比率',
@@ -942,20 +983,33 @@
     });
   }
 
+  function sectionHeader(text) {
+    var div = h('div', { class: 'section-title' });
+    div.appendChild(h('span', { class: 'bar' }));
+    div.appendChild(document.createTextNode(text));
+    return div;
+  }
+
   function renderAll() {
     G = GEOMETRY[breakpointName()]; // 現在の画面幅に合わせてグラフのジオメトリを選び直す
     buildKpiRow(document.getElementById('kpi-row'));
     var stack = document.getElementById('stack-main');
     stack.innerHTML = '';
+
+    stack.appendChild(sectionHeader('社内不良(KP)・差し戻し'));
     cardMonthlyQtyCount(stack);
     cardMonthlyAmount(stack);
-    cardClaimMonthly(stack);
     cardStackedGroup(stack);
     cardCauseRanking(stack);
     cardDefectRate(stack);
     cardKpRework(stack);
     cardCustomerRanking(stack);
     cardMachineRanking(stack);
+
+    stack.appendChild(sectionHeader('客先クレーム(CC)'));
+    cardClaimMonthly(stack);
+    cardClaimByWorker(stack);
+    cardClaimByInspector(stack);
   }
 
   /* 画面幅が変わってブレークポイントをまたいだ時だけ再描画する(データは再取得せず、既に持っている値で再描画) */
