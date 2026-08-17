@@ -302,7 +302,7 @@
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP,
     DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
-    CUSTOMERS, MACHINES, defectRate, kpReworkRatio, claimMonthly,
+    CUSTOMERS, WORKERS, defectRate, kpReworkRatio, claimMonthly,
     CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
 
   function applyData(data) {
@@ -315,7 +315,7 @@
     CAUSE_GROUPS = data.causeGroups;
     causeTotals = data.causeTotals;
     CUSTOMERS = data.customers || [];
-    MACHINES = data.machines || [];
+    WORKERS = data.workers || [];
     defectRate = data.defectRate;
     claimMonthly = data.claimMonthly || MONTHS.map(function () { return 0; });
     CLAIM_BY_WORKER = data.claimByWorker || [];
@@ -886,18 +886,18 @@
       note: 'どの得意先向けで不良が多いかが分かり、優先的に対策すべき案件の判断材料になります。'
     });
   }
-  function cardMachineRanking(parent) {
+  function cardWorkerRanking(parent) {
     makeCard(parent, {
-      title: '設備別 不良個数',
-      subtitle: '機種名ごとの不良個数(年計)',
+      title: '加工者別 不良件数',
+      subtitle: '加工者ごとの不良件数(年計、追加不良項目の行は重複カウントしない)',
       buildViz: function (v) {
-        buildRanking(v, MACHINES, 'var(--series-1)', { metricName: '個数' });
+        buildRanking(v, WORKERS, 'var(--series-1)', { metricName: '件数' });
       },
       buildTable: function (t) {
-        var rows = MACHINES.slice().sort(function (a, b) { return b.value - a.value; }).map(function (p) { return [p.label, p.value]; });
-        buildSimpleTable(t, ['設備', '個数'], rows);
+        var rows = WORKERS.slice().sort(function (a, b) { return b.value - a.value; }).map(function (p) { return [p.label, p.value]; });
+        buildSimpleTable(t, ['加工者', '件数'], rows);
       },
-      note: '設備の保全・段取り見直しの優先度づけに使えます。'
+      note: '加工者ごとの傾向が分かり、教育・作業手順見直しの優先度づけに使えます。'
     });
   }
   function cardDefectRate(parent) {
@@ -971,7 +971,7 @@
     cardCauseRanking(stack);
     cardDefectRate(stack);
     cardCustomerRanking(stack);
-    cardMachineRanking(stack);
+    cardWorkerRanking(stack);
 
     stack.appendChild(sectionHeader('客先クレーム(CC)'));
     cardClaimMonthly(stack);
