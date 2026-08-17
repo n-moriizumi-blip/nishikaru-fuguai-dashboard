@@ -290,7 +290,7 @@
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP,
     DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
-    CUSTOMERS, MACHINES, defectRate, kpReworkRatio;
+    CUSTOMERS, MACHINES, defectRate, kpReworkRatio, claimMonthly;
 
   function applyData(data) {
     MONTHS = data.months;
@@ -304,6 +304,7 @@
     CUSTOMERS = data.customers || [];
     MACHINES = data.machines || [];
     defectRate = data.defectRate;
+    claimMonthly = data.claimMonthly || MONTHS.map(function () { return 0; });
     kpReworkRatio = (data.kpReworkRatio || []).map(function (s, i) {
       return { label: s.label, value: s.value, color: i === 0 ? 'var(--series-1)' : 'var(--series-2)' };
     });
@@ -918,6 +919,18 @@
       note: '個数・金額は絶対量、不良率は生産量あたりの効率を示す指標として補完的に見られます。'
     });
   }
+  function cardClaimMonthly(parent) {
+    makeCard(parent, {
+      title: '客先クレーム件数の月別推移',
+      subtitle: '客先クレーム管理台帳(CC)の件数(発生月ベース)',
+      buildViz: function (v) {
+        buildLine(v, MONTHS, claimMonthly, 'var(--series-2)', { seriesName: 'クレーム件数' });
+      },
+      buildTable: function (t) {
+        buildSimpleTable(t, ['月', '件数'], MONTHS.map(function (m, i) { return [m, claimMonthly[i]]; }));
+      }
+    });
+  }
   function cardKpRework(parent) {
     makeCard(parent, {
       title: '社内不良(KP)と差し戻しの比率',
@@ -936,6 +949,7 @@
     stack.innerHTML = '';
     cardMonthlyQtyCount(stack);
     cardMonthlyAmount(stack);
+    cardClaimMonthly(stack);
     cardStackedGroup(stack);
     cardCauseRanking(stack);
     cardDefectRate(stack);
