@@ -300,7 +300,7 @@
   /* ---------------------------------------------------------------- */
   /* 0. データ取得                                                     */
   /* ---------------------------------------------------------------- */
-  var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP,
+  var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP, monthlyAmountRework,
     DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
     CUSTOMERS, WORKERS, defectRate, kpReworkRatio, claimMonthly,
     CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
@@ -310,6 +310,7 @@
     monthlyQty = data.monthlyQty;
     monthlyCount = data.monthlyCount;
     monthlyAmountKP = data.monthlyAmountKP;
+    monthlyAmountRework = data.monthlyAmountRework || MONTHS.map(function () { return 0; });
     DEFECT_GROUPS = data.defectGroups;
     stackedByGroup = data.stackedByGroup;
     CAUSE_GROUPS = data.causeGroups;
@@ -777,8 +778,10 @@
     var thisMonthQty = monthlyQty[repIdx];
     var prevQty = monthlyQty[compIdx];
     var qtyDelta = prevQty ? Math.round(((thisMonthQty - prevQty) / prevQty) * 100) : 0;
-    var thisMonthAmount = monthlyAmountKP[repIdx];
-    var prevAmount = monthlyAmountKP[compIdx];
+    // 2026-08-19、差し戻しでも単価を入力するようになったため、KPIタイルはKP・差し戻し合計の金額にする
+    var monthlyAmountTotal = monthlyAmountKP.map(function (v, i) { return v + monthlyAmountRework[i]; });
+    var thisMonthAmount = monthlyAmountTotal[repIdx];
+    var prevAmount = monthlyAmountTotal[compIdx];
     var amtDelta = prevAmount ? Math.round(((thisMonthAmount - prevAmount) / prevAmount) * 100) : 0;
     var thisRate = defectRate[repIdx];
     var prevRate = defectRate[compIdx];
@@ -789,7 +792,7 @@
 
     var tiles = [
       { label: repLabel + ' 不良個数', value: fmtInt(thisMonthQty) + ' 個', delta: qtyDelta, series: monthlyQty, color: 'var(--series-1)' },
-      { label: repLabel + ' 不良金額(KP)', value: fmtYen(thisMonthAmount), delta: amtDelta, series: monthlyAmountKP, color: 'var(--series-3)' },
+      { label: repLabel + ' 不良金額', value: fmtYen(thisMonthAmount), delta: amtDelta, series: monthlyAmountTotal, color: 'var(--series-3)' },
       { label: repLabel + ' 不良率', value: thisRate + '%', delta: rateDelta, deltaIsPoint: true, series: defectRate, color: 'var(--series-1)' },
       { label: '社内不良(KP)比率(年計)', value: kpTile.value + '%', note: '差し戻し ' + reworkTile.value + '%', series: null, color: 'var(--series-1)' }
     ];
@@ -832,13 +835,18 @@
   }
   function cardMonthlyAmount(parent) {
     makeCard(parent, {
-      title: '月別 不良金額(社内不良KPのみ)',
-      subtitle: '桁が違うため個数・件数とは別グラフ。上のグラフと同じ月並びで揃えて比較',
+      title: '月別 不良金額(社内不良KP・差し戻し)',
+      subtitle: '桁が違うため個数・件数とは別グラフ。上のグラフと同じ月並びで揃えて比較(2026-08-19、差し戻しでも単価を入力するようになったため内訳を表示)',
       buildViz: function (v) {
-        buildGroupedBar(v, MONTHS, [{ name: '金額', color: 'var(--series-3)', values: monthlyAmountKP }], { fmt: fmtYen });
+        buildGroupedBar(v, MONTHS, [
+          { name: 'KP', color: 'var(--series-3)', values: monthlyAmountKP },
+          { name: '差し戻し', color: 'var(--series-2)', values: monthlyAmountRework }
+        ], { fmt: fmtYen });
       },
       buildTable: function (t) {
-        buildSimpleTable(t, ['月', '金額'], MONTHS.map(function (m, i) { return [m, fmtYen(monthlyAmountKP[i])]; }));
+        buildSimpleTable(t, ['月', 'KP金額', '差し戻し金額'], MONTHS.map(function (m, i) {
+          return [m, fmtYen(monthlyAmountKP[i]), fmtYen(monthlyAmountRework[i])];
+        }));
       }
     });
   }
@@ -875,7 +883,7 @@
   function cardCustomerRanking(parent) {
     makeCard(parent, {
       title: '得意先別 不良金額ランキング',
-      subtitle: '上位' + CUSTOMERS.length + '件、社内不良(KP)の金額ベース',
+      subtitle: '上位' + CUSTOMERS.length + '件、社内不良(KP)・差し戻し合算の金額ベース',
       buildViz: function (v) {
         buildRanking(v, CUSTOMERS, 'var(--series-1)', { metricName: '金額', fmt: fmtYen });
       },
