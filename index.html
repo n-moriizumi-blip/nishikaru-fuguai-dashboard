@@ -139,17 +139,23 @@
   /* グラフは1つ1列(縦積み)、1枚1枚を大きく表示する */
   .stack { display: flex; flex-direction: column; gap: 22px; }
 
-  /* 社内不良(KP)/客先クレーム(CC)のセクション見出し(2026-08-17追加) */
+  /* 社内不良(KP)/客先クレーム(CC)のセクション見出し(2026-08-17追加、2026-08-19に目立つデザインへ刷新) */
   .section-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 12px;
+    font-size: 19px;
     font-weight: 800;
-    letter-spacing: .03em;
-    color: var(--text-primary);
+    letter-spacing: .05em;
+    color: #ffffff;
+    margin-top: 6px;
+    padding: 13px 22px;
+    border-radius: 14px;
+    background: linear-gradient(120deg, var(--brand-navy) 0%, #2f5d82 100%);
+    box-shadow: 0 4px 16px rgba(31,58,82,.28);
   }
-  .section-title .bar { width: 4px; height: 15px; border-radius: 2px; background: var(--brand-accent); flex-shrink: 0; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title .bar { width: 5px; height: 24px; border-radius: 3px; background: var(--brand-accent); flex-shrink: 0; }
 
   .kpi-row {
     display: grid;
@@ -835,8 +841,8 @@
   }
   function cardMonthlyAmount(parent) {
     makeCard(parent, {
-      title: '月別 不良金額(社内不良KP・差し戻し)',
-      subtitle: '桁が違うため個数・件数とは別グラフ。上のグラフと同じ月並びで揃えて比較(2026-08-19、差し戻しでも単価を入力するようになったため内訳を表示)',
+      title: '月別 不良金額',
+      subtitle: '桁が違うため個数・件数とは別グラフ。上のグラフと同じ月並びで揃えて比較(2026-08-19、差し戻しでも単価を入力するようになったためKP・差し戻しの内訳を表示)',
       buildViz: function (v) {
         buildGroupedBar(v, MONTHS, [
           { name: 'KP', color: 'var(--series-3)', values: monthlyAmountKP },
