@@ -307,6 +307,7 @@
   /* 0. データ取得                                                     */
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP, monthlyAmountRework,
+    monthlyQtyKP, monthlyQtyRework, monthlyCountKP, monthlyCountRework,
     DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
     CUSTOMERS, WORKERS, defectRate, kpReworkRatio, claimMonthly,
     CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
@@ -317,6 +318,10 @@
     monthlyCount = data.monthlyCount;
     monthlyAmountKP = data.monthlyAmountKP;
     monthlyAmountRework = data.monthlyAmountRework || MONTHS.map(function () { return 0; });
+    monthlyQtyKP = data.monthlyQtyKP || MONTHS.map(function () { return 0; });
+    monthlyQtyRework = data.monthlyQtyRework || MONTHS.map(function () { return 0; });
+    monthlyCountKP = data.monthlyCountKP || MONTHS.map(function () { return 0; });
+    monthlyCountRework = data.monthlyCountRework || MONTHS.map(function () { return 0; });
     DEFECT_GROUPS = data.defectGroups;
     stackedByGroup = data.stackedByGroup;
     CAUSE_GROUPS = data.causeGroups;
@@ -516,61 +521,6 @@
       t.textContent = fmtInt(val);
       svg.appendChild(t);
     }
-  }
-
-  /** 個数(棒)と件数(折れ線)を同じ軸上に重ねる複合グラフ(どちらも「件」単位のため軸を共有できる) */
-  function buildBarLineCombo(container, categories, barSeries, lineSeries) {
-    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
-    var maxVal = niceMax(Math.max(Math.max.apply(null, barSeries.values), Math.max.apply(null, lineSeries.values)) * 1.25);
-    axisAndGrid(svg, maxVal, plotW, plotH);
-
-    var n = categories.length;
-    var groupW = plotW / n;
-    var barW = Math.min(G.barMax, groupW - 14);
-
-    var linePts = [];
-    categories.forEach(function (cat, ci) {
-      var gx = G.M.left + ci * groupW;
-      var v = barSeries.values[ci];
-      var bh = plotH * (v / maxVal);
-      var bx = gx + (groupW - barW) / 2;
-      var by = G.M.top + plotH - bh;
-      var rect = el('rect', { x: bx, y: by, width: barW, height: Math.max(bh, 1), rx: 4, ry: 4, fill: barSeries.color });
-      attachMarkTooltip(rect, cat, [
-        { label: barSeries.name, value: fmtInt(v), color: barSeries.color },
-        { label: lineSeries.name, value: fmtInt(lineSeries.values[ci]), color: lineSeries.color }
-      ]);
-      svg.appendChild(rect);
-      var vLab = el('text', { class: 'value-label', x: bx + barW / 2, y: by - 6, 'text-anchor': 'middle' });
-      vLab.textContent = fmtInt(v);
-      svg.appendChild(vLab);
-
-      if (ci % G.labelEvery === 0) {
-        var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: G.H - 8, 'text-anchor': 'middle' });
-        lab.textContent = cat;
-        svg.appendChild(lab);
-      }
-
-      var lv = lineSeries.values[ci];
-      linePts.push([gx + groupW / 2, G.M.top + plotH - plotH * (lv / maxVal)]);
-    });
-
-    var linePath = 'M' + linePts.map(function (p) { return p[0] + ',' + p[1]; }).join(' L');
-    svg.appendChild(el('path', { d: linePath, fill: 'none', stroke: lineSeries.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-
-    linePts.forEach(function (p, i) {
-      svg.appendChild(el('circle', { cx: p[0], cy: p[1], r: 5, fill: lineSeries.color, stroke: 'var(--card-bg)', 'stroke-width': 2 }));
-      var vLab = el('text', { class: 'value-label', x: p[0], y: p[1] - 10, 'text-anchor': 'middle' });
-      vLab.textContent = fmtInt(lineSeries.values[i]);
-      svg.appendChild(vLab);
-    });
-
-    container.appendChild(svg);
-    legendFor(container, [
-      { label: barSeries.name + '(棒)', color: barSeries.color },
-      { label: lineSeries.name + '(折れ線)', color: lineSeries.color }
-    ]);
   }
 
   function buildStackedBar(container, categories, series, opts) {
@@ -792,18 +742,37 @@
   /* ---------------------------------------------------------------- */
   /* 5. グラフカードの組み立て                                          */
   /* ---------------------------------------------------------------- */
-  function cardMonthlyQtyCount(parent) {
+  function cardMonthlyQty(parent) {
     makeCard(parent, {
-      title: '月別 不良個数・件数',
-      subtitle: '個数(棒)・件数(折れ線)は同じ「件」単位のため軸を共有して重ね表示',
+      title: '月別 不良個数',
+      subtitle: '積み上げ棒の上に合計、棒の中にKP・差し戻しそれぞれの個数を表示',
       buildViz: function (v) {
-        buildBarLineCombo(v, MONTHS,
-          { name: '個数', color: 'var(--series-1)', values: monthlyQty },
-          { name: '件数', color: 'var(--series-2)', values: monthlyCount }
-        );
+        buildStackedBar(v, MONTHS, [
+          { name: 'KP', color: 'var(--series-1)', values: monthlyQtyKP },
+          { name: '差し戻し', color: 'var(--series-2)', values: monthlyQtyRework }
+        ]);
       },
       buildTable: function (t) {
-        buildSimpleTable(t, ['月', '個数', '件数'], MONTHS.map(function (m, i) { return [m, monthlyQty[i], monthlyCount[i]]; }));
+        buildSimpleTable(t, ['月', 'KP個数', '差し戻し個数', '合計'], MONTHS.map(function (m, i) {
+          return [m, monthlyQtyKP[i], monthlyQtyRework[i], monthlyQtyKP[i] + monthlyQtyRework[i]];
+        }));
+      }
+    });
+  }
+  function cardMonthlyCount(parent) {
+    makeCard(parent, {
+      title: '月別 不良件数',
+      subtitle: '積み上げ棒の上に合計、棒の中にKP・差し戻しそれぞれの件数を表示',
+      buildViz: function (v) {
+        buildStackedBar(v, MONTHS, [
+          { name: 'KP', color: 'var(--series-4)', values: monthlyCountKP },
+          { name: '差し戻し', color: 'var(--series-2)', values: monthlyCountRework }
+        ]);
+      },
+      buildTable: function (t) {
+        buildSimpleTable(t, ['月', 'KP件数', '差し戻し件数', '合計'], MONTHS.map(function (m, i) {
+          return [m, monthlyCountKP[i], monthlyCountRework[i], monthlyCountKP[i] + monthlyCountRework[i]];
+        }));
       }
     });
   }
@@ -947,7 +916,8 @@
     stack.innerHTML = '';
 
     stack.appendChild(sectionHeader('社内不良(KP)・差し戻し'));
-    cardMonthlyQtyCount(stack);
+    cardMonthlyQty(stack);
+    cardMonthlyCount(stack);
     cardMonthlyAmount(stack);
     cardStackedGroup(stack);
     cardCauseRanking(stack);
