@@ -518,45 +518,6 @@
     }
   }
 
-  function buildGroupedBar(container, categories, series, opts) {
-    opts = opts || {};
-    var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
-    var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
-    var maxVal = niceMax(Math.max.apply(null, series.flatMap(function (s) { return s.values; })) * 1.15);
-    axisAndGrid(svg, maxVal, plotW, plotH);
-
-    var n = categories.length, sN = series.length;
-    var groupW = plotW / n;
-    var barW = Math.min(G.barMax, (groupW - 8) / sN);
-    var gap = 2;
-
-    categories.forEach(function (cat, ci) {
-      var gx = G.M.left + ci * groupW;
-      series.forEach(function (s, si) {
-        var v = s.values[ci];
-        var bh = plotH * (v / maxVal);
-        var bx = gx + (groupW - sN * barW - (sN - 1) * gap) / 2 + si * (barW + gap);
-        var by = G.M.top + plotH - bh;
-        var rect = el('rect', {
-          x: bx, y: by, width: barW, height: Math.max(bh, 1),
-          rx: 4, ry: 4, fill: s.color
-        });
-        attachMarkTooltip(rect, cat, [{ label: s.name, value: opts.fmt ? opts.fmt(v) : fmtInt(v), color: s.color }]);
-        svg.appendChild(rect);
-        var vLab = el('text', { class: 'value-label', x: bx + barW / 2, y: by - 6, 'text-anchor': 'middle' });
-        vLab.textContent = opts.fmt ? opts.fmt(v) : fmtInt(v);
-        svg.appendChild(vLab);
-      });
-      if (ci % G.labelEvery === 0) {
-        var lab = el('text', { class: 'axis-label', x: gx + groupW / 2, y: G.H - 8, 'text-anchor': 'middle' });
-        lab.textContent = cat;
-        svg.appendChild(lab);
-      }
-    });
-    container.appendChild(svg);
-    if (sN > 1) legendFor(container, series.map(function (s) { return { label: s.name, color: s.color }; }));
-  }
-
   /** 個数(棒)と件数(折れ線)を同じ軸上に重ねる複合グラフ(どちらも「件」単位のため軸を共有できる) */
   function buildBarLineCombo(container, categories, barSeries, lineSeries) {
     var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
@@ -612,11 +573,13 @@
     ]);
   }
 
-  function buildStackedBar(container, categories, series) {
+  function buildStackedBar(container, categories, series, opts) {
+    opts = opts || {};
+    var fmt = opts.fmt || fmtInt;
     var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
     var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var totals = categories.map(function (_, ci) { return series.reduce(function (a, s) { return a + s.values[ci]; }, 0); });
-    var maxVal = niceMax(Math.max.apply(null, totals) * 1.1);
+    var maxVal = niceMax(Math.max.apply(null, totals) * 1.15);
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length;
@@ -635,18 +598,23 @@
           x: gx, y: by + 1, width: barW, height: Math.max(bh - 2, 1),
           fill: s.color
         });
-        attachMarkTooltip(rect, cat, [{ label: s.name, value: fmtInt(v), color: s.color }]);
+        attachMarkTooltip(rect, cat, [{ label: s.name, value: fmt(v), color: s.color }]);
         svg.appendChild(rect);
         if (bh >= 18) {
           var segLab = el('text', {
             x: gx + barW / 2, y: by + bh / 2 + 4, 'text-anchor': 'middle',
             fill: LABEL_INK_ON[s.color] || '#fff', 'font-size': '10.5', 'font-weight': '700'
           });
-          segLab.textContent = fmtInt(v);
+          segLab.textContent = fmt(v);
           svg.appendChild(segLab);
         }
         yCursor -= bh;
       });
+      // 積み上げ全体の合計値を棒の上に表示(内訳の各値は棒の中に、合計は棒の外に、で両方分かるようにする)
+      var totalTop = G.M.top + plotH - plotH * (totals[ci] / maxVal);
+      var totalLab = el('text', { class: 'value-label', x: gx + barW / 2, y: totalTop - 6, 'text-anchor': 'middle' });
+      totalLab.textContent = fmt(totals[ci]);
+      svg.appendChild(totalLab);
       if (ci % G.labelEvery === 0) {
         var lab = el('text', { class: 'axis-label', x: gx + barW / 2, y: G.H - 8, 'text-anchor': 'middle' });
         lab.textContent = cat;
@@ -842,16 +810,16 @@
   function cardMonthlyAmount(parent) {
     makeCard(parent, {
       title: '月別 不良金額',
-      subtitle: '桁が違うため個数・件数とは別グラフ。上のグラフと同じ月並びで揃えて比較(2026-08-19、差し戻しでも単価を入力するようになったためKP・差し戻しの内訳を表示)',
+      subtitle: '桁が違うため個数・件数とは別グラフ。積み上げ棒の上に合計、棒の中にKP・差し戻しそれぞれの金額を表示',
       buildViz: function (v) {
-        buildGroupedBar(v, MONTHS, [
+        buildStackedBar(v, MONTHS, [
           { name: 'KP', color: 'var(--series-3)', values: monthlyAmountKP },
           { name: '差し戻し', color: 'var(--series-2)', values: monthlyAmountRework }
         ], { fmt: fmtYen });
       },
       buildTable: function (t) {
-        buildSimpleTable(t, ['月', 'KP金額', '差し戻し金額'], MONTHS.map(function (m, i) {
-          return [m, fmtYen(monthlyAmountKP[i]), fmtYen(monthlyAmountRework[i])];
+        buildSimpleTable(t, ['月', 'KP金額', '差し戻し金額', '合計'], MONTHS.map(function (m, i) {
+          return [m, fmtYen(monthlyAmountKP[i]), fmtYen(monthlyAmountRework[i]), fmtYen(monthlyAmountKP[i] + monthlyAmountRework[i])];
         }));
       }
     });
