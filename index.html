@@ -308,7 +308,7 @@
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP, monthlyAmountRework,
     monthlyQtyKP, monthlyQtyRework, monthlyCountKP, monthlyCountRework,
-    DEFECT_GROUPS, stackedByGroup, KIZU_ITEMS, stackedByKizuItem, CAUSE_GROUPS, causeTotals,
+    KIZU_ITEMS, stackedByKizuItem, stackedByKizuItemCount, CAUSE_GROUPS, causeTotals,
     CUSTOMERS, WORKERS, defectRate, kpReworkRatio, claimMonthly,
     CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
 
@@ -322,10 +322,9 @@
     monthlyQtyRework = data.monthlyQtyRework || MONTHS.map(function () { return 0; });
     monthlyCountKP = data.monthlyCountKP || MONTHS.map(function () { return 0; });
     monthlyCountRework = data.monthlyCountRework || MONTHS.map(function () { return 0; });
-    DEFECT_GROUPS = data.defectGroups;
-    stackedByGroup = data.stackedByGroup;
     KIZU_ITEMS = data.kizuItems || [];
     stackedByKizuItem = data.stackedByKizuItem || MONTHS.map(function () { return []; });
+    stackedByKizuItemCount = data.stackedByKizuItemCount || MONTHS.map(function () { return []; });
     CAUSE_GROUPS = data.causeGroups;
     causeTotals = data.causeTotals;
     CUSTOMERS = data.customers || [];
@@ -804,6 +803,23 @@
       }
     });
   }
+  function cardKizuMonthlyCount(parent) {
+    var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
+    makeCard(parent, {
+      title: '月別 キズ不良件数',
+      subtitle: 'キズ系の不良項目を種類ごとに色分けして積み上げ表示',
+      buildViz: function (v) {
+        buildStackedBar(v, MONTHS, KIZU_ITEMS.map(function (name, i) {
+          return { name: name, color: colors[i % colors.length], values: stackedByKizuItemCount.map(function (row) { return row[i]; }) };
+        }), { headroom: 1.02 });
+      },
+      buildTable: function (t) {
+        buildSimpleTable(t, ['月'].concat(KIZU_ITEMS), MONTHS.map(function (m, mi) {
+          return [m].concat(KIZU_ITEMS.map(function (_, ii) { return stackedByKizuItemCount[mi][ii]; }));
+        }));
+      }
+    });
+  }
   function cardKizuMonthly(parent) {
     var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
     makeCard(parent, {
@@ -817,23 +833,6 @@
       buildTable: function (t) {
         buildSimpleTable(t, ['月'].concat(KIZU_ITEMS), MONTHS.map(function (m, mi) {
           return [m].concat(KIZU_ITEMS.map(function (_, ii) { return stackedByKizuItem[mi][ii]; }));
-        }));
-      }
-    });
-  }
-  function cardStackedGroup(parent) {
-    var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
-    makeCard(parent, {
-      title: '分類別内訳(月別・積み上げ)',
-      subtitle: DEFECT_GROUPS.join('・') + 'の月別件数',
-      buildViz: function (v) {
-        buildStackedBar(v, MONTHS, DEFECT_GROUPS.map(function (g, i) {
-          return { name: g, color: colors[i % colors.length], values: stackedByGroup.map(function (row) { return row[i]; }) };
-        }));
-      },
-      buildTable: function (t) {
-        buildSimpleTable(t, ['月'].concat(DEFECT_GROUPS), MONTHS.map(function (m, mi) {
-          return [m].concat(DEFECT_GROUPS.map(function (_, gi) { return stackedByGroup[mi][gi]; }));
         }));
       }
     });
@@ -934,8 +933,8 @@
     cardMonthlyCount(stack);
     cardMonthlyQty(stack);
     cardMonthlyAmount(stack);
+    cardKizuMonthlyCount(stack);
     cardKizuMonthly(stack);
-    cardStackedGroup(stack);
     cardDefectRate(stack);
     cardCustomerRanking(stack);
     cardWorkerRanking(stack);
