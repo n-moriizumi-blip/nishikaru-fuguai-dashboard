@@ -400,11 +400,18 @@
   }
   function fmtInt(v) { return (v || 0).toLocaleString('ja-JP'); }
   function fmtYen(v) { return '¥' + (v || 0).toLocaleString('ja-JP'); }
+  /**
+   * 軸の上限を「切りのいい数」に丸める。以前は1・2・5・10の4段階だけだったため、
+   * 実際の最大値が例えば256でも次の段(500)まで飛んでしまい、上の余白が大きくなりすぎていた
+   * (2026-08-19、ユーザー指摘)。刻みを細かくして無駄な余白を減らす。
+   */
   function niceMax(v) {
     if (v <= 0) return 10;
     var mag = Math.pow(10, Math.floor(Math.log10(v)));
     var norm = v / mag;
-    var nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    var steps = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+    var nice = 10;
+    for (var i = 0; i < steps.length; i++) { if (norm <= steps[i]) { nice = steps[i]; break; } }
     return nice * mag;
   }
 
@@ -818,7 +825,7 @@
     var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
     makeCard(parent, {
       title: '分類別内訳(月別・積み上げ)',
-      subtitle: DEFECT_GROUPS.join('・') + 'の月別内訳',
+      subtitle: DEFECT_GROUPS.join('・') + 'の月別件数',
       buildViz: function (v) {
         buildStackedBar(v, MONTHS, DEFECT_GROUPS.map(function (g, i) {
           return { name: g, color: colors[i % colors.length], values: stackedByGroup.map(function (row) { return row[i]; }) };
@@ -828,19 +835,6 @@
         buildSimpleTable(t, ['月'].concat(DEFECT_GROUPS), MONTHS.map(function (m, mi) {
           return [m].concat(DEFECT_GROUPS.map(function (_, gi) { return stackedByGroup[mi][gi]; }));
         }));
-      }
-    });
-  }
-  function cardCauseRanking(parent) {
-    makeCard(parent, {
-      title: 'キズ原因内訳(年計)',
-      subtitle: '原因グループ別、多い順。任意項目のため参考値',
-      buildViz: function (v) {
-        buildRanking(v, CAUSE_GROUPS.map(function (c, i) { return { label: c, value: causeTotals[i] }; }), 'var(--series-1)', { metricName: '個数' });
-      },
-      buildTable: function (t) {
-        var rows = CAUSE_GROUPS.map(function (c, i) { return [c, causeTotals[i]]; }).sort(function (a, b) { return b[1] - a[1]; });
-        buildSimpleTable(t, ['原因グループ', '個数'], rows);
       }
     });
   }
@@ -942,7 +936,6 @@
     cardMonthlyAmount(stack);
     cardKizuMonthly(stack);
     cardStackedGroup(stack);
-    cardCauseRanking(stack);
     cardDefectRate(stack);
     cardCustomerRanking(stack);
     cardWorkerRanking(stack);
