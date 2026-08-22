@@ -793,6 +793,20 @@
       }
     });
   }
+  function cardKizuMonthly(parent) {
+    var kizuIdx = DEFECT_GROUPS.indexOf('キズ系');
+    var kizuMonthly = stackedByGroup.map(function (row) { return kizuIdx >= 0 ? row[kizuIdx] : 0; });
+    makeCard(parent, {
+      title: '月別 キズ不良個数',
+      subtitle: '不良項目のうち「キズ系」(キズ・流動キズ・チャックキズ等)だけの月別個数',
+      buildViz: function (v) {
+        buildStackedBar(v, MONTHS, [{ name: 'キズ', color: 'var(--series-1)', values: kizuMonthly }]);
+      },
+      buildTable: function (t) {
+        buildSimpleTable(t, ['月', '個数'], MONTHS.map(function (m, i) { return [m, kizuMonthly[i]]; }));
+      }
+    });
+  }
   function cardStackedGroup(parent) {
     var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
     makeCard(parent, {
@@ -919,6 +933,7 @@
     cardMonthlyCount(stack);
     cardMonthlyQty(stack);
     cardMonthlyAmount(stack);
+    cardKizuMonthly(stack);
     cardStackedGroup(stack);
     cardCauseRanking(stack);
     cardDefectRate(stack);
