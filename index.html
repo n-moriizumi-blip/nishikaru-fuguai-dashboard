@@ -308,7 +308,7 @@
   /* ---------------------------------------------------------------- */
   var MONTHS, monthlyQty, monthlyCount, monthlyAmountKP, monthlyAmountRework,
     monthlyQtyKP, monthlyQtyRework, monthlyCountKP, monthlyCountRework,
-    DEFECT_GROUPS, stackedByGroup, CAUSE_GROUPS, causeTotals,
+    DEFECT_GROUPS, stackedByGroup, KIZU_ITEMS, stackedByKizuItem, CAUSE_GROUPS, causeTotals,
     CUSTOMERS, WORKERS, defectRate, kpReworkRatio, claimMonthly,
     CLAIM_BY_WORKER, CLAIM_BY_INSPECTOR;
 
@@ -324,6 +324,8 @@
     monthlyCountRework = data.monthlyCountRework || MONTHS.map(function () { return 0; });
     DEFECT_GROUPS = data.defectGroups;
     stackedByGroup = data.stackedByGroup;
+    KIZU_ITEMS = data.kizuItems || [];
+    stackedByKizuItem = data.stackedByKizuItem || MONTHS.map(function () { return []; });
     CAUSE_GROUPS = data.causeGroups;
     causeTotals = data.causeTotals;
     CUSTOMERS = data.customers || [];
@@ -529,7 +531,9 @@
     var plotW = G.W - G.M.left - G.M.right, plotH = G.H - G.M.top - G.M.bottom;
     var svg = el('svg', { viewBox: '0 0 ' + G.W + ' ' + G.H });
     var totals = categories.map(function (_, ci) { return series.reduce(function (a, s) { return a + s.values[ci]; }, 0); });
-    var maxVal = niceMax(Math.max.apply(null, totals) * 1.15);
+    // headroom: 合計の最大値に対して軸上限をどれだけ余裕を持たせるか(既定1.15=15%)。
+    // niceMax自体が「1,2,5,10」区切りに切り上げるため、小さくしても合計ラベルの余白は残る(2026-08-19)
+    var maxVal = niceMax(Math.max.apply(null, totals) * (opts.headroom || 1.15));
     axisAndGrid(svg, maxVal, plotW, plotH);
 
     var n = categories.length;
@@ -784,7 +788,7 @@
         buildStackedBar(v, MONTHS, [
           { name: 'KP', color: 'var(--series-3)', values: monthlyAmountKP },
           { name: '差し戻し', color: 'var(--series-2)', values: monthlyAmountRework }
-        ], { fmt: fmtYen });
+        ], { fmt: fmtYen, headroom: 1.02 });
       },
       buildTable: function (t) {
         buildSimpleTable(t, ['月', 'KP金額', '差し戻し金額', '合計'], MONTHS.map(function (m, i) {
@@ -794,16 +798,19 @@
     });
   }
   function cardKizuMonthly(parent) {
-    var kizuIdx = DEFECT_GROUPS.indexOf('キズ系');
-    var kizuMonthly = stackedByGroup.map(function (row) { return kizuIdx >= 0 ? row[kizuIdx] : 0; });
+    var colors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
     makeCard(parent, {
       title: '月別 キズ不良個数',
-      subtitle: '不良項目のうち「キズ系」(キズ・流動キズ・チャックキズ等)だけの月別個数',
+      subtitle: 'キズ系の不良項目を種類ごとに色分けして積み上げ表示',
       buildViz: function (v) {
-        buildStackedBar(v, MONTHS, [{ name: 'キズ', color: 'var(--series-1)', values: kizuMonthly }]);
+        buildStackedBar(v, MONTHS, KIZU_ITEMS.map(function (name, i) {
+          return { name: name, color: colors[i % colors.length], values: stackedByKizuItem.map(function (row) { return row[i]; }) };
+        }), { headroom: 1.02 });
       },
       buildTable: function (t) {
-        buildSimpleTable(t, ['月', '個数'], MONTHS.map(function (m, i) { return [m, kizuMonthly[i]]; }));
+        buildSimpleTable(t, ['月'].concat(KIZU_ITEMS), MONTHS.map(function (m, mi) {
+          return [m].concat(KIZU_ITEMS.map(function (_, ii) { return stackedByKizuItem[mi][ii]; }));
+        }));
       }
     });
   }
